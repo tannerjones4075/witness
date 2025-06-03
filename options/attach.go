@@ -18,12 +18,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// ImageSource defines the source of the image to attach attestations to
+type ImageSource string
+
+const (
+	// ImageSourceDocker loads the image from the local Docker daemon
+	ImageSourceDocker ImageSource = "docker"
+	// ImageSourceTarball loads the image from a local tarball file
+	ImageSourceTarball ImageSource = "tarball"
+)
+
 // AttachOptions contains options for attaching attestations to OCI artifacts
 type AttachOptions struct {
 	AttestationFilePaths []string
-	SkipVerification     bool   // Add skip verification option
-	InputTarballPath     string // Path to the input OCI image tarball
-	VerifyByTarballHash  bool   // Verify attestation against input tarball hash
+	Source               ImageSource
+	TarballPath          string // Path to the tarball file when Source is ImageSourceTarball
 }
 
 var RequiredAttachFlags = []string{
@@ -32,9 +41,7 @@ var RequiredAttachFlags = []string{
 
 // AddFlags adds command line flags for the AttachOptions
 func (ao *AttachOptions) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().StringSliceVarP(&ao.AttestationFilePaths, "attestation", "a", []string{}, "Attestation files to attach to the Docker image")
-	cmd.Flags().BoolVar(&ao.SkipVerification, "skip-verification", false, "Skip verification of attestation subjects against image digest")
-	cmd.Flags().StringVarP(&ao.InputTarballPath, "input-tarball", "i", "", "Path to the input OCI image tarball (required)")
-	cmd.Flags().BoolVarP(&ao.VerifyByTarballHash, "verify-by-tarball-hash", "t", false, "Verify attestation against the SHA256 hash of the input tarball file")
+	cmd.Flags().StringSliceVarP(&ao.AttestationFilePaths, "attestation", "a", []string{}, "Attestation files to attach to the OCI artifact")
+	cmd.Flags().StringVar(&ao.TarballPath, "tarball-path", "", "Path to image tarball when source is 'tarball'")
 	cmd.MarkFlagsRequiredTogether(RequiredAttachFlags...)
 }
